@@ -1,6 +1,7 @@
 import trimesh
 # from holder import x,y,z
 
+
 class Trimesh_wrapper:
 
     mesh:               trimesh
@@ -30,7 +31,6 @@ class Trimesh_wrapper:
             # return get_rand_point()
         self.starting_point = starting_point_idx
         
-
     def calc_symmetry_planes(self) -> list:
         sp = []
         # get simetry planes of object
