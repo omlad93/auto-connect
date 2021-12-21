@@ -2,29 +2,9 @@
 import numpy as np
 from numpy.core.numeric import identity
 from trimesh_wrapper import Trimesh_wrapper
+from arithmetics import *
 
 # function library for generating holder
-
-
-epsilon     = 10**-5
-size        = lambda v : np.sqrt(np.sum(np.dot(v,v)))
-angle       = lambda v1,v2 : np.arccos(np.dot(v1,v2)/(size(v1)*size(v2)))
-zero_clip   = lambda x : max(x,epsilon)
-points_diff = lambda p1,p2 : [p1[i] - p2[i] for i in range(len(p1))]
-points_dist = lambda p1,p2 : np.sqrt(np.sum(np.square(points_diff(p1,p2)))) 
-
-def distance_from_plane(point:np.ndarray, plane: np.ndarray) -> float:
-    ''' 
-        A function to find minimal distance of point from plane
-        point = [px, py, pz]
-        plane = [a, b, c, d] 
-    '''
-    x,y,z = point
-    a,b,c,d = plane
-    numerator = abs (a*x + b*y + c*z + d)
-    denominator = size(np.array(a,b,c))
-    return numerator/denominator if (denominator != 0) else np.inf
-
 
 def ordered_polygons(mesh: Trimesh_wrapper, free_motions: list) -> list:
     pass
@@ -35,18 +15,35 @@ def shell_computation():
     pass
 
 def d_good():
+    '''
+    The Geodesic distance between barycenters of triangles t, s
+    '''
     pass
 
 def d_symm():
+    '''
+    The distance between triangle t and symmetry plane Pk
+    use distance_from_plane(point, plane)
+    '''
     pass
 
+
 def d_norm():
+    '''
+    The angle between vector normal of triangle 't' and global direction N
+    covered with 'angle' lambda expression
+    '''
     pass
 
 ## 4.2 - Holdability Criterion ##
 
 
-def contact_blockage(point:np.ndarray, normal:np.ndarray, phi:np.ndarray, b_th:float):
+def contact_blockage( point:np.ndarray,
+                      normal:np.ndarray,
+                      phi:np.ndarray,
+                      b_th:float
+                      ):
+                      
     ''' calculate b(p, phi) '''
     identity_matrix = np.asarray([
         [ 1,  0,  0 ],
@@ -75,5 +72,7 @@ def normalized_holdability(T):
 
 
 ## 4.3 - Free Motions ##
+
+
 ## TODO : all functions
 

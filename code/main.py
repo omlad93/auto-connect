@@ -41,30 +41,30 @@ def get_parser() -> configargparse.ArgumentParser:
                              help='number of results to provide')
     parser.add_argument('--constraints', '-c', nargs='+', type=int, required=True, default=0,
                          help='a list of constraints chosen from 0 to 5')  
-    output = parser.add_mutually_exclusive_group(required=False)
-    output.add_argument('--output-name', '-on', type=str,
-                         help='module name to use as output in outputs folder')
-    output.add_argument('--output-path', '-op', type=str,
-                         help='module path to use as output')
 
     parsed = parser.parse_args()
     parsed.constraints = [1 if i in parsed.constraints else 0 for i in range(6)]
+    parsed.input = parsed.input_name if parsed.input_name else parsed.input_path
+
     return parsed
 
 # ------------------------ MAIN ------------------------ #
 
 def main() -> None:
     parser = get_parser()
-    object_name = 'bike-wheel'
-    mesh = trimesh.load(input_ply_path(object_name))
-    mesh.apply_scale(1/max(list(mesh.bounding_box.primitive.extents)))
+    input = 'ball'
+    mesh_w = Trimesh_wrapper(trimesh.load(input_ply_path(input)))
+    mesh_w.calc_symmetry_planes()
+    mesh_w.calc_minimal_distances()
+
+    #mesh.apply_scale(1/max(list(mesh.bounding_box.primitive.extents)))
     # p0 = mesh.triangles_center[0]
     
     
     # for facet in mesh.facets:
     #     mesh.visual.face_colors[facet] = trimesh.visual.random_color()
     # mesh.show()
-    mesh.export(output_obj_path(object_name))
+    mesh_w.export(output_obj_path(input))
 
 
 if __name__ == "__main__":
