@@ -16,18 +16,20 @@ class Trimesh_wrapper:
 
 
     def calc_minimal_distances(self) -> None:
-        self.minimal_distances = []
         n = len(self.mesh.triangles_center)
-        m = len(self.symmetry_planes)
-        for t in range(n):
-            min_distance = np.inf
-            for s in range(m):
-                triangle_center = self.mesh.triangles_center[t]
-                symmetry_plane  =  self.symmetry_planes[s]
-                min_distance = min(min_distance, distance_from_plane(triangle_center,symmetry_plane) )
-            # val = use linear computation from different mod
-            self.minimal_distances.append(min_distance)
-        print(self.minimal_distances)
+        if self.symmetry_planes:
+            self.minimal_distances = []
+            m = len(self.symmetry_planes)
+            for t in range(n):
+                min_distance = np.inf
+                for s in range(m):
+                    triangle_center = self.mesh.triangles_center[t]
+                    symmetry_plane  =  self.symmetry_planes[s]
+                    min_distance = min(min_distance, distance_from_plane(triangle_center,symmetry_plane) )
+                # val = use linear computation from different mod
+                self.minimal_distances.append(min_distance)
+        else:
+            self.minimal_distances = [0 for i in range(n)]
 
     def calc_starting_point(self) -> None:
         lst = self.calc_symmetry_planes()
@@ -61,6 +63,7 @@ class Trimesh_wrapper:
 
     def pre_process_mesh(self) -> None:
         self.calc_symmetry_planes()
+        self.calc_minimal_distances()
         pass
 
     def export(self, path:str)->None:
