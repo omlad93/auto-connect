@@ -6,6 +6,10 @@ from trimesh_wrapper import Trimesh_wrapper
 from utils import *
 
 
+# • Analyze the input mesh to find intrinsic-free motions (§4.3).
+# • Generate a shell that can hold the target object (§4.1 & §4.2).
+# • Select a diverse subset of designs to show to the user (§4.5).
+
 def file_path(filename:str, sub_dir:str, file_type:str='') -> str:
     if sub_dir in ['inputs','i']:
         return f'{p.curdir}{p.sep}{"inputs"}{p.sep}{filename}.{file_type if file_type else "ply"}'
@@ -21,7 +25,6 @@ def input_ply_path(ply_name:str) -> str:
 
 def output_obj_path(obj_name:str) -> str:
     return file_path(obj_name,'o')
-
 
 
 # ----------------------- PARSER ----------------------- #

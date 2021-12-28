@@ -1,6 +1,7 @@
 import numpy as np
 import trimesh
 from arithmetics import *
+from utils import *
 # from holder import x,y,z
 
 
@@ -8,38 +9,32 @@ def extract_point (v, i:int) ->np.array:
     return (np.array((v[i][0], v[i][1], v[i][2])))
 class Trimesh_wrapper:
 
-    mesh:               trimesh
-    convex_hull:        bool
-    symmetry_planes:    list
-    minimal_distances:  list
-    starting_point:     int # index in surfaces list of starting point
+    
+    mesh:               trimesh     # original mesh (input)
+    convex_hull:        bool        # is original mesh a convex_hull ?
+    symmetry_planes:    list        
+    minimal_distances:  list        # minimal distances of triangles center from any symmetry plane
+    current_holder:     trimesh     # T in paper
+    starting_point:     np.array    # of generating current holder
+    global_vec:         np.array    # for weighted sum calculation
+    results:            list        # list of holders
 
 
-    def calc_minimal_distances(self) -> None:
-        n = len(self.mesh.triangles_center)
-        if self.symmetry_planes:
-            self.minimal_distances = []
-            m = len(self.symmetry_planes)
-            for t in range(n):
-                min_distance = np.inf
-                for s in range(m):
-                    triangle_center = self.mesh.triangles_center[t]
-                    symmetry_plane  =  self.symmetry_planes[s]
-                    min_distance = min(min_distance, distance_from_plane(triangle_center,symmetry_plane) )
-                # val = use linear computation from different mod
-                self.minimal_distances.append(min_distance)
-        else:
-            self.minimal_distances = [0 for i in range(n)]
 
+
+    #TODO
     def calc_starting_point(self) -> None:
         lst = self.calc_symmetry_planes()
         starting_point_idx = 0
-        if lst:
+        if self.symmetry_planes:
+            # find point closest to symmetry plane
             pass
         else:
+            # get random point
             pass
-            # return get_rand_point()
-        self.starting_point = starting_point_idx
+            # return ()
+        
+        # self.starting_point = starting_point_idx
         
     def calc_symmetry_planes(self) -> None :
         sp = []
@@ -61,11 +56,15 @@ class Trimesh_wrapper:
 
         self.symmetry_planes = sp
 
+    # NOT DONE
     def pre_process_mesh(self) -> None:
         self.calc_symmetry_planes()
-        self.calc_minimal_distances()
+        self.minimal_distances = list[d_symm(self.mesh.triangles_center, self.symmetry_planes)]
+        self.global_vec = [0,0,-1] # Gravity (For Now)
+        self.calc_starting_point()
         pass
-
+    
+    
     def export(self, path:str)->None:
         self.mesh.export(path)
 

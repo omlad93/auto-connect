@@ -3,8 +3,8 @@ import numpy as np
 
 epsilon     = 10**-5
 size        = lambda v : np.sqrt(np.sum(np.dot(v,v)))
-angle       = lambda v1,v2 : np.arccos(np.dot(v1,v2)/(size(v1)*size(v2)))
 zero_clip   = lambda x : max(x,epsilon)
+angle       = lambda v1,v2 : np.arccos(np.dot(v1,v2)/zero_clip(size(v1)*size(v2)))
 points_diff = lambda p1,p2 : [p1[i] - p2[i] for i in range(len(p1))]
 points_dist = lambda p1,p2 : np.sqrt(np.sum(np.square(points_diff(p1,p2)))) 
 
