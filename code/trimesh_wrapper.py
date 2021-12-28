@@ -1,3 +1,4 @@
+from typing import List
 import numpy as np
 import trimesh
 from arithmetics import *
@@ -10,14 +11,18 @@ def extract_point (v, i:int) ->np.array:
 class Trimesh_wrapper:
 
     
-    mesh:               trimesh     # original mesh (input)
-    convex_hull:        bool        # is original mesh a convex_hull ?
-    symmetry_planes:    list        
-    minimal_distances:  list        # minimal distances of triangles center from any symmetry plane
-    current_holder:     trimesh     # T in paper
-    starting_point:     np.array    # of generating current holder
-    global_vec:         np.array    # for weighted sum calculation
-    results:            list        # list of holders
+    mesh:                   trimesh     # original mesh (input)
+    convex_hull:            bool        # is original mesh a convex_hull ?
+    alpha:                  float       # alpha parameter for free motions
+    symmetry_planes:        list        
+    minimal_distances:      list        # minimal distances of triangles center from any symmetry plane
+    current_holder:         trimesh     # T in paper
+    starting_point:         np.array    # of generating current holder
+    global_vec:             np.array    # for weighted sum calculation
+    results:                list        # list of holders
+    constraints:            list[dict]
+    intrinsic_free_motions: list        # computed internal free motion        
+    external_free_motions:  list        # free motions added by user
 
 
 
@@ -62,16 +67,20 @@ class Trimesh_wrapper:
         self.minimal_distances = list[d_symm(self.mesh.triangles_center, self.symmetry_planes)]
         self.global_vec = [0,0,-1] # Gravity (For Now)
         self.calc_starting_point()
-        pass
+        self.intrinsic_free_motions = intrinsic_free_motions()
+        self.constraints = []
+        
     
     
     def export(self, path:str)->None:
         self.mesh.export(path)
 
     def __init__( self, mesh:trimesh,
-                  convex_hull: bool=False) -> None:
+                  convex_hull: bool=False,
+                  alpha:int=0.5) -> None:
         self.mesh = mesh
         self.convex_hull = convex_hull
+        self.alpha = alpha
         self.pre_process_mesh()
 
         # self.calc_symmetry_planes()

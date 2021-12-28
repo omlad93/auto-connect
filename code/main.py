@@ -53,6 +53,7 @@ def get_parser() -> configargparse.ArgumentParser:
 
 # ------------------------ MAIN ------------------------ #
 
+#TODO
 def main() -> None:
     parser = get_parser()
     input = 'ball'
