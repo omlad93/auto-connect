@@ -1,5 +1,7 @@
 
+from typing import Optional
 import numpy as np
+from numpy.lib.function_base import append
 from scipy import optimize
 from scipy.sparse.construct import random
 from scipy.spatial.distance import hamming
@@ -9,16 +11,41 @@ from arithmetics import *
 
 # function library for generating holder
 
-#TODO
-def ordered_polygons(mesh: Trimesh_wrapper, free_motions: list) -> list:
-    pass
+
 
 ## 4.1 - Shell Computation ##
 
-#TODO
-def shell_computation():
-    # init random variables
-    pass
+def calc_starting_point(mesh_w: Trimesh_wrapper) -> np.array:
+    starting_point_idx = 0
+    if mesh_w.symmetry_planes:
+        plane = np.random.randint(0,len(mesh_w.mesh.symmetry_sections)-1)
+        point = np.random.randint(0,len(mesh_w.mesh.symmetry_sections[plane].vertices)-1)
+        starting_point = mesh_w.symmetry_sections[plane].vertices[point]
+        pass
+    else:
+        starting_point = mesh_w.mesh.triangles_center[np.randint(0, len( mesh_w.mesh.triangles_center)-1)]
+    return starting_point
+  
+def shell_computation(mesh_w:Trimesh_wrapper,
+                      holdability_th:float=0.1,
+                      weight_th:float=np.inf) ->  Optional[list] :
+
+    ordered_triangles = mesh_w.shell_init(mesh_w)
+    n = len(ordered_triangles)
+    shell_vectors = [0 for i in range(n)]
+    shell_triangles = []
+    for i in range(n):
+        if normalized_holdability(mesh_w) >= holdability_th:
+            return shell_vectors
+
+        elif ordered_triangles[i][1] >= weight_th:
+            break
+
+        t = ordered_triangles[i][0]
+        shell_triangles.append(list(t))
+        mesh_w.current_holder = mesh_w.mesh.submesh(shell_triangles,append = True)
+        shell_vectors[t] = 1
+    return None
 
 def d_geod(centers:list[np.array], seed_center:np.array) -> np.array:
     '''
@@ -56,10 +83,10 @@ def d_norm(normals:list[np.array], N:np.array) -> np.array:
     '''
     return np.array([angle(N,normals[i]) for i in range(len(normals))])
 
-def weighted_sum(w1:int, w2:int, w3:int, mesh_w:Trimesh_wrapper)->np.array:
+def weighted_sum(w1:int, w2:int, w3:int, mesh_w:Trimesh_wrapper, global_vec = np.array)->np.array:
     w_geod = w1 * d_geod(mesh_w.mesh.triangles_center, mesh_w.starting_point)
     w_symm = w2 * d_symm(mesh_w.mesh.triangles_center, mesh_w.symmetry_planes)
-    w_norm = w3 * d_norm(mesh_w.mesh.face_normals, mesh_w.global_vec)
+    w_norm = w3 * d_norm(mesh_w.mesh.face_normals, global_vec)
     return w_geod + w_symm + w_norm
     
 
@@ -102,14 +129,15 @@ def subregion_blockage(centers:list[np.array],
         B += contact_blockage(centers[i], normals[i], phi)
     return B
 
-def normalized_holdability(mesh_w:Trimesh_wrapper, constraints:list)->float:
+def normalized_holdability(mesh_w:Trimesh_wrapper)->float:
+    
     optimization_args = (mesh_w.current_holder.triangles_center, mesh_w.current_holder.face_normals)
     holdability = optimize.minimize(
         fun=subregion_blockage,
         x0=[0 for i in range(6)],
         method='COBYLA',
         args=optimization_args,
-        constraints=constraints
+        constraints=mesh_w.constraints
     )
     whole_mesh_args = (mesh_w.mesh.triangles_center, mesh_w.mesh.face_normals)
     maximum_holdability = optimize.minimize(
@@ -117,7 +145,7 @@ def normalized_holdability(mesh_w:Trimesh_wrapper, constraints:list)->float:
         x0=[0 for i in range(6)],
         method='COBYLA',
         args=whole_mesh_args,
-        constraints=constraints
+        constraints=mesh_w.constraints
     )
     assert( maximum_holdability.fun >= holdability.fun)
     return (holdability.fun / maximum_holdability.fun)
@@ -128,6 +156,7 @@ def normalized_holdability(mesh_w:Trimesh_wrapper, constraints:list)->float:
 def function_for_constaint(x, cone_factor, phi) -> float:
         return (rad_to_deg(angle(x,phi)) - cone_factor)
 
+# TODO : return value ?
 def intrinsic_free_motions(mesh_w: Trimesh_wrapper, cone_factor:int)->float:
     '''
     In some cases, the holdability measure is zero even if all triangles of
@@ -139,7 +168,6 @@ def intrinsic_free_motions(mesh_w: Trimesh_wrapper, cone_factor:int)->float:
     def one_minus_sumsq(input):
         return (1 - np.sum(np.square(input)))
     
-
     intrinsic_free_motions = []
     constraints = [{'type':'ineq', 'fun':one_minus_sumsq}, {'type':'ineq', 'fun':sumsq_minus_one}]
     args = (mesh_w.mesh.triangles_center, mesh_w.mesh.face_normals)
@@ -176,7 +204,7 @@ def external_free_motions(mesh_w:Trimesh_wrapper, user_free_motions:list, cone_f
     mesh_w.constraints += user_constraints
     mesh_w.external_free_motions = user_free_motions
 
-def find_triangles_to_ignore(mesh_w:Trimesh_wrapper):
+def find_triangles_to_ignore(mesh_w:Trimesh_wrapper) -> list[int]:
     triangles_to_ignore = []
     centers = mesh_w.mesh.triangles_center
     normals = mesh_w.mesh.face_normals
@@ -184,7 +212,7 @@ def find_triangles_to_ignore(mesh_w:Trimesh_wrapper):
         for phi in mesh_w.external_free_motions:
             if contact_blockage(centers[triangle_index], normals[triangle_index],phi):
                 triangles_to_ignore.append(triangle_index)
-    mesh_w = triangles_to_ignore
+    return triangles_to_ignore
 
 ## 4.5 - Providing Diverse Subset
 
@@ -201,4 +229,6 @@ def clustering_fit(vectors:list, results:int):
         affinity='precomputed'
         )
     return clustering.fit(similarity)
+
+ 
     

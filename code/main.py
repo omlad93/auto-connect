@@ -2,9 +2,11 @@ import configargparse
 import os.path as p
 import numpy as np
 import trimesh
-from trimesh_wrapper import Trimesh_wrapper
-from utils import *
+from trimesh_wrapper import *
+from pprint import PrettyPrinter
+# from utils import *
 
+pp = PrettyPrinter(indent=4)
 
 # • Analyze the input mesh to find intrinsic-free motions (§4.3).
 # • Generate a shell that can hold the target object (§4.1 & §4.2).
@@ -33,21 +35,25 @@ def get_parser() -> configargparse.ArgumentParser:
     parser = configargparse.get_argument_parser()
 
     input = parser.add_mutually_exclusive_group(required=True)
-    input.add_argument('--input-name','-in', type=str,
+    input.add_argument('--input','-in', type=str,
                          help='module name to use as input from inputs folder')
-    input.add_argument('--input-path','-ip', type=str,
-                         help='module path to use as input')
-
-    parser.add_argument('--iterations-count', '-i', type=int, default=1,
+    parser.add_argument('--iterations', '-i', type=int, default=1,
                              help='number of iterations to do')
-    parser.add_argument('--results-count', '-r', type=int, default=1,
+    parser.add_argument('--results', '-r', type=int, default=1,
                              help='number of results to provide')
     parser.add_argument('--constraints', '-c', nargs='+', type=int, required=True, default=0,
                          help='a list of constraints chosen from 0 to 5')  
 
     parsed = parser.parse_args()
+    assert parsed.results <= parsed.iterations, 'requested more results them iterations'
     parsed.constraints = [1 if i in parsed.constraints else 0 for i in range(6)]
-    parsed.input = parsed.input_name if parsed.input_name else parsed.input_path
+
+    print('\nArguments:\n'+
+            f'\t input:       {parsed.input}\n'
+            f'\t iteration:   {parsed.iterations}\n'
+            f'\t results:     {parsed.results}\n'
+            f'\t constraints: {parsed.constraints}\n\n'            
+        )
 
     return parsed
 
@@ -55,20 +61,27 @@ def get_parser() -> configargparse.ArgumentParser:
 
 #TODO
 def main() -> None:
-    parser = get_parser()
-    input = 'ball'
-    mesh_w = Trimesh_wrapper(trimesh.load(input_ply_path(input)))
-    mesh_w.calc_symmetry_planes()
-    mesh_w.calc_minimal_distances()
+    args = get_parser()
+    mesh_w = Trimesh_wrapper(
+        trimesh.load(input_ply_path(args.input)),
+        args.constraints
+    )
+    results =[]
+    # pp.pprint(mesh_w.__dict__)
+    # print(type(mesh_w.triangles_to_ignore[0]))
+    for iteration in range(args.iterations):
+        seed = calc_starting_point(mesh_w)
+        # # # # ordered_triangles = mesh_w.shell_init(seed)
+        current_shell = shell_computation(mesh_w, seed) # shell_vectors list (mesh_w.current_holder is updated)
+        results.append(mesh_w.current_holder)
+        mesh_w.current_holder.export(output_obj_path(f'{args.input}_{iteration}'))
+        print(f' ~ Exported {output_obj_path(f"{args.input}_{iteration}")}')
+        break
 
-    #mesh.apply_scale(1/max(list(mesh.bounding_box.primitive.extents)))
-    # p0 = mesh.triangles_center[0]
-    
-    
-    # for facet in mesh.facets:
-    #     mesh.visual.face_colors[facet] = trimesh.visual.random_color()
-    # mesh.show()
-    mesh_w.export(output_obj_path(input))
+
+
+
+    mesh_w.export(output_obj_path(args.input))
 
 
 if __name__ == "__main__":
