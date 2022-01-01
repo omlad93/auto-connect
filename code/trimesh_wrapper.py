@@ -249,7 +249,7 @@ def normalized_holdability(mesh_w:Trimesh_wrapper)->float:
 
 ## 4.3 - Free Motions ##
 
-def function_for_constaint(x, cone_factor, phi) -> float:
+def function_for_constaint(phi,x, cone_factor) -> float:
         return (rad_to_deg(angle(x,phi)) - cone_factor)
 
 # TODO : return value ?
@@ -297,7 +297,7 @@ def external_free_motions(mesh_w:Trimesh_wrapper, user_free_motions:list, cone_f
         user_constraints.append({
             'type':'ineq',
             'fun':function_for_constaint,
-            'args':(np.array(phi_free), cone_factor)
+            'args':(phi_free, cone_factor)
         })
     mesh_w.constraints += user_constraints
     mesh_w.external_free_motions = [user_free_motions]

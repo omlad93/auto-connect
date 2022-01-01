@@ -10,6 +10,7 @@ rad_to_deg  = lambda rad: 360*rad/(2*np.pi)
 
 def angle(v1,v2):
     dot = np.dot(v1,v2)/zero_clip(size(v1)*size(v2))
+    assert type(dot)==np.float64, f'Angle: type(dot)={type(dot)}\b       type(v1)={type(v1)}\n       type(v2)={type(v2)}'
     angle = np.arccos(dot)
     return angle
 
