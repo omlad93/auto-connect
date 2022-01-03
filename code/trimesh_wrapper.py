@@ -100,7 +100,6 @@ class Trimesh_wrapper:
         self.holdability_whole_mesh = 0
         # self.current_holder = Trimesh()
         self.pre_process_mesh(constraints)
-
  
 ## 4.1 - Shell Computation ##
 
@@ -111,7 +110,7 @@ def calc_starting_point(mesh_w: Trimesh_wrapper) -> np.array:
         starting_point = mesh_w.symmetry_sections[plane].vertices[point]
         pass
     else:
-        starting_point = mesh_w.mesh.triangles_center[np.randint(0, len( mesh_w.mesh.triangles_center)-1)]
+        starting_point = mesh_w.mesh.triangles_center[np.random.randint(0, len( mesh_w.mesh.triangles_center)-1)]
     return starting_point
   
 def shell_computation(mesh_w:Trimesh_wrapper,
@@ -131,11 +130,12 @@ def shell_computation(mesh_w:Trimesh_wrapper,
     shell_triangles = []
     for i in range(n):
         if ordered_triangles[i][1] >= weight_th:
-            print(f'break in iteration [{i}] due to infinite weight')
+            print(f'\t > returned in iteration [{i}] due to: infinite weight')
             break
 
         t = ordered_triangles[i][0]
         shell_triangles.append([t])
+        shell_vectors[t] = 1
         mesh_w.current_holder = mesh_w.mesh.submesh(shell_triangles,append = True)
 
         optimization_args = (mesh_w.current_holder.triangles_center, mesh_w.current_holder.face_normals)
@@ -145,17 +145,16 @@ def shell_computation(mesh_w:Trimesh_wrapper,
         if normalized_holdability_value > epsilon and print_it:
             print_it = False
             print(f'\t > reached non-zero holdability for shell on [{i}] iteration')
-        if i%50 == 0:
-            print(f'\tcurrent H(T):{normalized_holdability_value:.7f}, Threshold H(T):{holdability_th}')
-            print(f'\tI`m Alive! [{i}]')
-            print(f'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-
+        #if i%50 == 0:
+            # print(f'\tcurrent H(T):{normalized_holdability_value:.7f}, Threshold H(T):{holdability_th}')
+            # print(f'\tI`m Alive! [{i}]')
+            # print(f'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 
         if normalized_holdability_value >= holdability_th:
-            print(f'returned in iteration [{i}] due to satisfy holdability')
-            return shell_vectors
+            print(f'\t > returned in iteration [{i}] due to: good holdability')
+            break
 
-    return None
+    return shell_vectors
 
 def d_geod(centers:list[np.array], seed_center:np.array) -> np.array:
     '''
@@ -355,7 +354,10 @@ def clustering_fit(vectors:list, results:int):
     n = len(vectors)
     similarity = np.zeros((n,n))
     for i in range (n):
+        assert vectors[i] != None , f'vectors[{i}] = None'
         for j in range(i,n):
+            assert vectors[j] != None , f'vectors[{j}] = None'
+            assert len(vectors[i])== len(vectors[j]) , f'unmatched len: i={len(vectors[i])}   j={len(vectors[i])}'
             similarity[i,j] = similarity[j,i] = (1 - hamming(vectors[i], vectors[j]))
     clustering =  SpectralClustering(
         n_clusters=results,

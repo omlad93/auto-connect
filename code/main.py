@@ -1,4 +1,5 @@
 import configargparse
+import os
 import os.path as p
 import numpy as np
 import trimesh
@@ -42,17 +43,17 @@ def get_parser() -> configargparse.ArgumentParser:
     parser.add_argument('--results', '-r', type=int, default=1,
                              help='number of results to provide')
     parser.add_argument('--constraints', '-c', nargs='+', type=int, required=True, default=0,
-                         help='a list of constraints chosen from 0 to 5')  
+                         help='a list of constraints chosen from 0 to 5: 3-X, 4-Y, 5-Z')  
 
     parsed = parser.parse_args()
     assert parsed.results <= parsed.iterations, 'requested more results them iterations'
+    assert  parsed.results >= 0 and  parsed.iterations >=0 , 'need a none zero iteration, result count'
     parsed.constraints = np.array([[1.0 if i in parsed.constraints else 0.0 for i in range(6)]])
 
-    print('\nArguments:\n'+
-            f'\t input:       {parsed.input}\n'
-            f'\t iteration:   {parsed.iterations}\n'
+    print(  f'\n Auto-Connect run for {args.input}:\n'+
+            f'\t iterations:   {parsed.iterations}\n'
             f'\t results:     {parsed.results}\n'
-            f'\t constraints: {parsed.constraints}\n\n'            
+            f'\t constraints: {parsed.constraints}\n'            
         )
 
     return parsed
@@ -67,16 +68,34 @@ def main() -> None:
         args.constraints
     )
     results =[]
+    vectors =[]
     # pp.pprint(mesh_w.__dict__)
+    os.makedirs(f'outputs{p.sep}{args.input}{p.sep}all', exist_ok=True)
+    os.makedirs(f'outputs{p.sep}{args.input}{p.sep}clustered', exist_ok=True)
     for iteration in range(args.iterations):
+        print(f'computing shell #{iteration}:')
         seed = calc_starting_point(mesh_w)
-        # # # # ordered_triangles = mesh_w.shell_init(seed)
-        current_shell = shell_computation(mesh_w, seed) # shell_vectors list (mesh_w.current_holder is updated)
+        current_shell = shell_computation(mesh_w, seed)
         results.append(mesh_w.current_holder)
-        mesh_w.current_holder.export(output_obj_path(f'{args.input}_{iteration}'))
-        print(f'type of current holder is: {type(mesh_w.current_holder)}')
-        print(f' ~ Exported {output_obj_path(f"{args.input}_{iteration}")}')
-        break
+        vectors.append(current_shell)
+        out_path = output_obj_path(f'{args.input}{p.sep}all{p.sep}{args.input}_{iteration}')
+        mesh_w.current_holder.export(out_path)
+        print(f'\t ~ Export: {out_path}')
+    if args.iterations > args.results:
+        clustered = [False for i in range(args.results)]
+        print(f'\nrunning Clustering {args.iterations}->{args.results}:')
+        clustering = clustering_fit(vectors, args.results)
+        for i in range (len(vectors)):
+            for j in range (i,len(vectors)):
+                if clustering.labels_[j] == i:
+                    if not clustered[i]:
+                        out_path = output_obj_path(f'{args.input}{p.sep}clustered{p.sep}{args.input}_{i}')
+                        results[i].export(out_path)
+                        print(f'\t ~ Export: {out_path}')
+                        clustered[i] = True
+
+        print(f'\nAuto-Connect run for {args.input} has finished.\n')
+
 
 
 
