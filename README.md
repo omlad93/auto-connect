@@ -35,6 +35,7 @@ run `code/main.py` using terminal followed by arguments:
     a flag to use input`s convex hull (default: False)
 
 ## Example command lines:
-* `python .\code\main.py -in teapot -c 3`
+* `python .\code\main.py -in sandal -c 3`
 * `python .\code\main.py -c 4 -in ball -i 5 -r 1`
-* `python .\code\main.py -c 4 -in copper-key -i 2 -r 1 -cv`
+* `python .\code\main.py -c 4 -in scissors -i 2 -r 1 -cv`
+* `python .\code\main.py -c 4 5 -in cube -i 20 -r 2 -cv`
