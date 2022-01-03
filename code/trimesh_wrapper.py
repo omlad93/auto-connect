@@ -72,7 +72,7 @@ class Trimesh_wrapper:
                 a,b,c = n = np.cross(u,v)
                 d = np.dot(n,p7)
                 sp.append([a,b,c,d])
-        self.symmetry_sections = sections
+        self.symmetry_sections = sections if self.mesh.symmetry else None
         self.symmetry_planes = sp
 
     # NOT DONE
@@ -120,6 +120,7 @@ def shell_computation(mesh_w:Trimesh_wrapper,
                       weight_th:float=np.inf) ->  Optional[list] :
 
     ordered_triangles = mesh_w.shell_init(starting_point)
+    print_it = True
     n = len(ordered_triangles)
     
     whole_mesh_args = (mesh_w.mesh.triangles_center, mesh_w.mesh.face_normals)
@@ -141,10 +142,11 @@ def shell_computation(mesh_w:Trimesh_wrapper,
         current_holdability = optimize.minimize( fun=subregion_blockage, x0=[0 for i in range(6)], method='COBYLA', args=optimization_args, constraints=mesh_w.constraints)
         normalized_holdability_value = current_holdability.fun/mesh_w.holdability_whole_mesh
         
-        if normalized_holdability_value > epsilon:
-            print(f'\t > reached non-zero holdability on [{i}] iteration')
-        if i%100 == 0:
-            print(f'\n\tcurrent H(T):{normalized_holdability_value:.5f}, Threshold H(T):{holdability_th}')
+        if normalized_holdability_value > epsilon and print_it:
+            print_it = False
+            print(f'\t > reached non-zero holdability for shell on [{i}] iteration')
+        if i%50 == 0:
+            print(f'\tcurrent H(T):{normalized_holdability_value:.7f}, Threshold H(T):{holdability_th}')
             print(f'\tI`m Alive! [{i}]')
             print(f'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 
@@ -249,6 +251,8 @@ def subregion_blockage(phi: np.array,
         B += contact_blockage(point=centers[i], normal=normals[i], phi=phi)
     return B
 
+
+#unused - implemented in shell_computation for better debug 
 def normalized_holdability(mesh_w:Trimesh_wrapper)->float:
     
     optimization_args = (mesh_w.current_holder.triangles_center, mesh_w.current_holder.face_normals)

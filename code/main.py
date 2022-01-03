@@ -81,7 +81,6 @@ def main() -> None:
 
 
 
-    mesh_w.export(output_obj_path(args.input))
 
 
 if __name__ == "__main__":
