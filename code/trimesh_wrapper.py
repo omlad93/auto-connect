@@ -18,19 +18,18 @@ class Trimesh_wrapper:
 
     
     mesh:                   Trimesh     # original mesh (input)
-    holdability_whole_mesh: float     # original mesh (input)
+    holdability_whole_mesh: float       # original mesh (input)
     convex_hull:            bool        # is original mesh a convex_hull ?
     alpha:                  float       # alpha parameter for free motions
-    symmetry_planes:        list
-    symmetry_sections:      list  
+    symmetry_planes:        list        # symmetry planes of th mesh
+    symmetry_sections:      list        # symmetry sections of the mesh
     minimal_distances:      list        # minimal distances of triangles center from any symmetry plane
     current_holder:         Trimesh     # T in paper
     maximum_holder:         Trimesh     # Holder hold all legal triangles
-    global_vec:             np.array    # for weighted sum calculation
     results:                list        # list of holders
-    constraints:            list[dict]
+    constraints:            list[dict]  # constraints from user
     intrinsic_free_motions: list        # computed internal free motion        
-    external_free_motions:  list[list]        # free motions added by user
+    external_free_motions:  list[list]  # free motions added by user
     triangles_to_ignore:    list[int]   # list of triangles indexes to ignore (blocking)
 
 
@@ -75,15 +74,13 @@ class Trimesh_wrapper:
         self.symmetry_sections = sections if self.mesh.symmetry else None
         self.symmetry_planes = sp
 
-    # NOT DONE
     def pre_process_mesh(self, constraints) -> None:
         self.calc_symmetry_planes()
         self.minimal_distances = list[d_symm(self.mesh.triangles_center, self.symmetry_planes)]
-        self.global_vec = [0,0,-1] # Gravity (For Now)
         self.constraints = []       
         self.current_holder = Trimesh       
         self.maximum_holder = Trimesh
-        intrinsic_free_motions(self)    # updates self.constraints & self.intrinsic_free_motions
+        intrinsic_free_motions(self)                # updates self.constraints & self.intrinsic_free_motions
         external_free_motions(self,constraints)     # updates self.constraints & self.external_free_motions
         self.triangles_to_ignore = find_triangles_to_ignore(self)
     
@@ -130,7 +127,7 @@ def shell_computation(mesh_w:Trimesh_wrapper,
     shell_triangles = []
     for i in range(n):
         if ordered_triangles[i][1] >= weight_th:
-            print(f'\t > returned in iteration [{i}] due to: infinite weight')
+            print(f'\t\t > Reached infinite weight using {i} triangles: NH={normalized_holdability_value:.4f}, didn`t reach {holdability_th}')
             break
 
         t = ordered_triangles[i][0]
@@ -144,14 +141,10 @@ def shell_computation(mesh_w:Trimesh_wrapper,
         
         if normalized_holdability_value > epsilon and print_it:
             print_it = False
-            print(f'\t > reached non-zero holdability for shell on [{i}] iteration')
-        #if i%50 == 0:
-            # print(f'\tcurrent H(T):{normalized_holdability_value:.7f}, Threshold H(T):{holdability_th}')
-            # print(f'\tI`m Alive! [{i}]')
-            # print(f'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+            print(f'\t\t > Reached non-zero holdability for shell using {i} triangles')
 
         if normalized_holdability_value >= holdability_th:
-            print(f'\t > returned in iteration [{i}] due to: good holdability')
+            print(f'\t\t > Reached holdability threshold using {i} triangles: NH={normalized_holdability_value:.4f}')
             break
 
     return shell_vectors
@@ -179,7 +172,6 @@ def d_symm(centers:list[np.array], symmetry_planes:list) -> np.array:
                 triangle_center = centers[t]
                 symmetry_plane  =  symmetry_planes[s]
                 min_distance = min(min_distance, distance_from_plane(triangle_center,symmetry_plane) )
-            # val = use linear computation from different mod
             minimal_distances.append(min_distance)
     else:
         minimal_distances = [0 for i in range(n)]
@@ -192,7 +184,7 @@ def d_norm(normals:list[np.array], N:np.array) -> np.array:
     '''
     return np.array([angle(N,normals[i]) for i in range(len(normals))])
 
-def weighted_sum(w1:int, w2:int, w3:int, starting_point:np.array, mesh_w:Trimesh_wrapper, global_vec = np.array)->np.array:
+def weighted_sum(w1:int, w2:int, w3:int, starting_point:np.array, mesh_w:Trimesh_wrapper, global_vec:np.array)->np.array:
     w_geod = w1 * d_geod(mesh_w.mesh.triangles_center, starting_point)
     w_symm = w2 * d_symm(mesh_w.mesh.triangles_center, mesh_w.symmetry_planes)
     w_norm = w3 * d_norm(mesh_w.mesh.face_normals, global_vec)
@@ -219,7 +211,6 @@ def contact_blockage( point:np.array,
         [ 0,  1,  0 ], 
         [ 0,  0,  1 ]
         ])
-    # print(f'point is {point} of type {type(point)} \n\n')
     x,y,z = point
     point_matrix = np.array([
         [ 0, -z,  y ],
@@ -235,8 +226,6 @@ def contact_blockage( point:np.array,
             print (f'Phi   :\n{phi} \n')
             print (f'Shpaes: N:{normal.shape}, Matrix:{matrix.shape}, Phi:{phi.shape}' )
             exit(9)
-        
-            # print (f'B     :\n{float(np.dot(normal, np.dot(matrix, phi)))}\n')
     return b if b > b_th else 0
 
 def subregion_blockage(phi: np.array,
@@ -244,7 +233,6 @@ def subregion_blockage(phi: np.array,
                        normals:list[np.array],
                        )->float:
     ''' calculate B(T, phi) '''
-    # print(f'Centers: {centers[0:5]} of type {type(centers)}')
     B = 0
     for i in range(len(centers)):
         B += contact_blockage(point=centers[i], normal=normals[i], phi=phi)
@@ -287,7 +275,7 @@ def normalized_holdability(mesh_w:Trimesh_wrapper)->float:
 def function_for_constaint(phi,x, cone_factor) -> float:
         return (rad_to_deg(angle(x,phi)) - cone_factor)
 
-# TODO : return value ?
+# Does Return Value Is Used ?
 def intrinsic_free_motions(mesh_w: Trimesh_wrapper, cone_factor:int=30)->float:
     '''
     In some cases, the holdability measure is zero even if all triangles of
@@ -302,7 +290,6 @@ def intrinsic_free_motions(mesh_w: Trimesh_wrapper, cone_factor:int=30)->float:
     intrinsic_free_motions = []
     constraints = [{'type':'ineq', 'fun':one_minus_sumsq}, {'type':'ineq', 'fun':sumsq_minus_one}]
     args = (mesh_w.mesh.triangles_center, mesh_w.mesh.face_normals)
-    # print(f'TC: {mesh_w.mesh.triangles_center[0:5]}')
     min_val = 0
     while min_val == 0:
         optimization = optimize.minimize(
