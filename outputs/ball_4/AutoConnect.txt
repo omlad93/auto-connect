@@ -1,0 +1,6 @@
+
+Auto-Connect run for `ball`:
+	iterations:5 
+	results:1 
+	clustering will be needed
+	constraints: [[0. 0. 0. 0. 1. 0.]]

@@ -1,0 +1,4 @@
+
+Auto-Connect run for `sandal`:
+	convex hull mode
+	constraints: [[0. 0. 0. 0. 0. 1.]]

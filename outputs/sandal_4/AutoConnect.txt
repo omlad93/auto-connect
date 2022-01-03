@@ -1,0 +1,7 @@
+
+Auto-Connect run for `sandal`:
+	iterations:3 
+	results:1 
+	clustering will be needed
+	convex hull mode
+	constraints: [[0. 0. 0. 0. 1. 0.]]

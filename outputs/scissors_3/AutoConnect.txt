@@ -1,0 +1,7 @@
+
+Auto-Connect run for `scissors`:
+	iterations:2 
+	results:1 
+	clustering will be needed
+	convex hull mode
+	constraints: [[0. 0. 0. 1. 0. 0.]]

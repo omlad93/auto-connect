@@ -1,0 +1,7 @@
+
+Auto-Connect run for `cube`:
+	iterations:8 
+	results:4 
+	clustering will be needed
+	convex hull mode
+	constraints: [[0. 0. 0. 0. 1. 0.]]
