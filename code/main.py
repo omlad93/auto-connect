@@ -51,7 +51,7 @@ def get_parser() -> configargparse.ArgumentParser:
     parsed.clustering = parsed.results < parsed.iterations
 
     first = f'\nAuto-Connect run for `{parsed.input}`:\n'
-    second = f'\titerations:{parsed.iterations} \n\tresults:{parsed.results} \n{"   clustering will be needed" if parsed.clustering else ""}\n'
+    second = f'\titerations:{parsed.iterations} \n\tresults:{parsed.results} \n' + '\tclustering will be needed\n' if parsed.clustering else ''
     third = f'\tconvex hull mode\n' if parsed.convex_hull else ''
     fourth =  f'\tconstraints: {parsed.constraints}\n'
 
@@ -75,18 +75,23 @@ def main() -> None:
     results =[]
     vectors =[]
     # pp.pprint(mesh_w.__dict__)
-    os.makedirs(f'outputs{p.sep}{args.input}{p.sep}all', exist_ok=True)
+    cst = ''.join([str(i) for i in range(6) if args.constraints[0][i]])
+    out_folder = f'outputs{p.sep}{args.input}_{cst}{p.sep}'
+    all_folder = f'{out_folder}all'
+    clustered_folder = f'{out_folder}clustered'
+    # cst = ''.join([str(i) for i in range(6) if args.constraints[0][i]])
+    os.makedirs(all_folder, exist_ok=True)
     for iteration in range(args.iterations):
         print(f'\t - Computing Shell #{iteration}:')
         seed = calc_starting_point(mesh_w)
         current_shell = shell_computation(mesh_w, seed)
         results.append(mesh_w.current_holder)
         vectors.append(current_shell)
-        out_path = output_obj_path(f'{args.input}{p.sep}all{p.sep}{args.input}_{iteration}')
+        out_path = f'{all_folder}{p.sep}{args.input}_{iteration}.obj'
         mesh_w.current_holder.export(out_path)
         print(f'\t\t ~ Export: {out_path}')
     if args.clustering:
-        os.makedirs(f'outputs{p.sep}{args.input}{p.sep}clustered', exist_ok=True)
+        os.makedirs(clustered_folder, exist_ok=True)
         clustered = [False for i in range(args.results)]
         print(f'\n\tRunning Clustering {args.iterations}->{args.results}:')
         clustering = clustering_fit(vectors, args.results)
@@ -94,13 +99,13 @@ def main() -> None:
             for j in range (i,len(vectors)):
                 if clustering.labels_[j] == i:
                     if not clustered[i]:
-                        out_path = output_obj_path(f'{args.input}{p.sep}clustered{p.sep}{args.input}_{i}')
+                        out_path = f'{clustered_folder}{p.sep}{args.input}_{i}.obj'
                         results[i].export(out_path)
                         print(f'\t ~ Export: {out_path}')
                         clustered[i] = True
 
     print(f'\nAuto-Connect run for {args.input} has finished.\n')
-    with open (f'outputs{p.sep}{args.input}{p.sep}AutoConnect.txt', 'w') as info:
+    with open (f'{out_folder}AutoConnect.txt', 'w') as info:
         info.write(args.info)
     
 

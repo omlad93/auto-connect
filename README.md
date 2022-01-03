@@ -11,14 +11,11 @@ https://koyama.xyz/project/AutoConnect/supplemental.pdf &nbsp;: supplemental mat
 
 
 
-<br>  
-<br>
-
 ## Pre - Running:
 1. make sure you have git LFS (https://git-lfs.github.com/)
 2. Clone Auto-Connect Repo
 3. install requirements: `pip install -r requirements.txt`
-4. Place you `ply` file in inputs sub-folder [`inputs/module_name.ply`]
+4. Place your `ply` file in inputs sub-folder [`inputs/module_name.ply`]
 
 
 
@@ -40,3 +37,4 @@ run `code/main.py` using terminal followed by arguments:
 ## Example command lines:
 * `python .\code\main.py -in teapot -c 3`
 * `python .\code\main.py -c 4 -in ball -i 5 -r 1`
+* `python .\code\main.py -c 4 -in copper-key -i 2 -r 1 -cv`

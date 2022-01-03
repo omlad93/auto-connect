@@ -95,7 +95,6 @@ class Trimesh_wrapper:
         self.convex_hull = convex_hull
         self.alpha = alpha
         self.holdability_whole_mesh = 0
-        # self.current_holder = Trimesh()
         self.pre_process_mesh(constraints)
  
 ## 4.1 - Shell Computation ##
@@ -127,7 +126,7 @@ def shell_computation(mesh_w:Trimesh_wrapper,
     shell_triangles = []
     for i in range(n):
         if ordered_triangles[i][1] >= weight_th:
-            print(f'\t\t > Reached infinite weight using {i} triangles: NH={normalized_holdability_value:.4f}, didn`t reach {holdability_th}')
+            print(f'\t\t > Reached infinite weight using {i} triangles: NH={normalized_holdability_value:.4f} [didn`t reach {holdability_th}]')
             break
 
         t = ordered_triangles[i][0]
