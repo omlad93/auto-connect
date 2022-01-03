@@ -46,7 +46,7 @@ def get_parser() -> configargparse.ArgumentParser:
 
     parsed = parser.parse_args()
     assert parsed.results <= parsed.iterations, 'requested more results them iterations'
-    parsed.constraints = [1 if i in parsed.constraints else 0 for i in range(6)]
+    parsed.constraints = np.array([[1.0 if i in parsed.constraints else 0.0 for i in range(6)]])
 
     print('\nArguments:\n'+
             f'\t input:       {parsed.input}\n'
@@ -68,13 +68,13 @@ def main() -> None:
     )
     results =[]
     # pp.pprint(mesh_w.__dict__)
-    # print(type(mesh_w.triangles_to_ignore[0]))
     for iteration in range(args.iterations):
         seed = calc_starting_point(mesh_w)
         # # # # ordered_triangles = mesh_w.shell_init(seed)
         current_shell = shell_computation(mesh_w, seed) # shell_vectors list (mesh_w.current_holder is updated)
         results.append(mesh_w.current_holder)
         mesh_w.current_holder.export(output_obj_path(f'{args.input}_{iteration}'))
+        print(f'type of current holder is: {type(mesh_w.current_holder)}')
         print(f' ~ Exported {output_obj_path(f"{args.input}_{iteration}")}')
         break
 

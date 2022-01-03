@@ -18,12 +18,14 @@ class Trimesh_wrapper:
 
     
     mesh:                   Trimesh     # original mesh (input)
+    holdability_whole_mesh: float     # original mesh (input)
     convex_hull:            bool        # is original mesh a convex_hull ?
     alpha:                  float       # alpha parameter for free motions
     symmetry_planes:        list
     symmetry_sections:      list  
     minimal_distances:      list        # minimal distances of triangles center from any symmetry plane
     current_holder:         Trimesh     # T in paper
+    maximum_holder:         Trimesh     # Holder hold all legal triangles
     global_vec:             np.array    # for weighted sum calculation
     results:                list        # list of holders
     constraints:            list[dict]
@@ -47,7 +49,9 @@ class Trimesh_wrapper:
                 shell_triangles.append([t])
             ordered_triangles.append([t, w + sum_of_weights[t]])
         ordered_triangles.sort(key=lambda item: item[1])
-        self.current_holder = self.mesh.submesh(shell_triangles, append = True)
+        self.maximum_holder = self.mesh.submesh(shell_triangles, append = True)
+        # optimization_args = (self.maximum_holder.triangles_center, self.maximum_holder.face_normals)
+        # max_holder_holdability = optimize.minimize( fun=subregion_blockage, x0=[0 for i in range(6)], method='COBYLA', args=optimization_args, constraints=self.constraints)
         return (ordered_triangles)
 
         
@@ -77,6 +81,8 @@ class Trimesh_wrapper:
         self.minimal_distances = list[d_symm(self.mesh.triangles_center, self.symmetry_planes)]
         self.global_vec = [0,0,-1] # Gravity (For Now)
         self.constraints = []       
+        self.current_holder = Trimesh       
+        self.maximum_holder = Trimesh
         intrinsic_free_motions(self)    # updates self.constraints & self.intrinsic_free_motions
         external_free_motions(self,constraints)     # updates self.constraints & self.external_free_motions
         self.triangles_to_ignore = find_triangles_to_ignore(self)
@@ -91,6 +97,7 @@ class Trimesh_wrapper:
         self.mesh = mesh.convex_hull if convex_hull else mesh
         self.convex_hull = convex_hull
         self.alpha = alpha
+        self.holdability_whole_mesh = 0
         # self.current_holder = Trimesh()
         self.pre_process_mesh(constraints)
 
@@ -114,19 +121,38 @@ def shell_computation(mesh_w:Trimesh_wrapper,
 
     ordered_triangles = mesh_w.shell_init(starting_point)
     n = len(ordered_triangles)
+    
+    whole_mesh_args = (mesh_w.mesh.triangles_center, mesh_w.mesh.face_normals)
+    maximum_holdability = optimize.minimize( fun=subregion_blockage, x0=[0 for i in range(6)], method='COBYLA',  args=whole_mesh_args, constraints=mesh_w.constraints)
+    mesh_w.holdability_whole_mesh = maximum_holdability.fun
+
     shell_vectors = [0 for i in range(n)]
     shell_triangles = []
     for i in range(n):
-        if normalized_holdability(mesh_w) >= holdability_th:
-            return shell_vectors
-
-        elif ordered_triangles[i][1] >= weight_th:
+        if ordered_triangles[i][1] >= weight_th:
+            print(f'break in iteration [{i}] due to infinite weight')
             break
 
         t = ordered_triangles[i][0]
         shell_triangles.append([t])
         mesh_w.current_holder = mesh_w.mesh.submesh(shell_triangles,append = True)
-        shell_vectors[t] = 1
+
+        optimization_args = (mesh_w.current_holder.triangles_center, mesh_w.current_holder.face_normals)
+        current_holdability = optimize.minimize( fun=subregion_blockage, x0=[0 for i in range(6)], method='COBYLA', args=optimization_args, constraints=mesh_w.constraints)
+        normalized_holdability_value = current_holdability.fun/mesh_w.holdability_whole_mesh
+        
+        if normalized_holdability_value > epsilon:
+            print(f'\t > reached non-zero holdability on [{i}] iteration')
+        if i%100 == 0:
+            print(f'\n\tcurrent H(T):{normalized_holdability_value:.5f}, Threshold H(T):{holdability_th}')
+            print(f'\tI`m Alive! [{i}]')
+            print(f'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+
+
+        if normalized_holdability_value >= holdability_th:
+            print(f'returned in iteration [{i}] due to satisfy holdability')
+            return shell_vectors
+
     return None
 
 def d_geod(centers:list[np.array], seed_center:np.array) -> np.array:
@@ -201,14 +227,12 @@ def contact_blockage( point:np.array,
      ] )
     matrix = np.concatenate((np.transpose(point_matrix), identity_matrix), axis=1)
     try:
-        b = float(np.dot(normal, np.dot(matrix, phi))) #no need for Phi transpose due to optimization method
+        b = float(np.dot(normal, np.dot(matrix, np.transpose(phi)))) 
     except:
             print (f'Normal:\n{normal}\n')
             print (f'Matrix:\n{matrix}\n')
             print (f'Phi   :\n{phi} \n')
-            # print (f'Normal:\n{normal}\n(shape:{normal.shape})')
-            # print (f'Matrix:\n{matrix}\n(shape:{matrix.shape})\n')
-            # print (f'Phi   :\n{phi} \n(shape:{phi.shape})\n')
+            print (f'Shpaes: N:{normal.shape}, Matrix:{matrix.shape}, Phi:{phi.shape}' )
             exit(9)
         
             # print (f'B     :\n{float(np.dot(normal, np.dot(matrix, phi)))}\n')
@@ -234,17 +258,25 @@ def normalized_holdability(mesh_w:Trimesh_wrapper)->float:
         method='COBYLA',
         args=optimization_args,
         constraints=mesh_w.constraints
-    )
-    whole_mesh_args = (mesh_w.mesh.triangles_center, mesh_w.mesh.face_normals)
-    maximum_holdability = optimize.minimize(
-        fun=subregion_blockage,
-        x0=[0 for i in range(6)],
-        method='COBYLA',
-        args=whole_mesh_args,
-        constraints=mesh_w.constraints
-    )
-    assert( maximum_holdability.fun >= holdability.fun)
-    return (holdability.fun / maximum_holdability.fun)
+    )     
+
+    if not mesh_w.holdability_whole_mesh:
+        whole_mesh_args = (mesh_w.mesh.triangles_center, mesh_w.mesh.face_normals)
+        maximum_holdability = optimize.minimize(
+            fun=subregion_blockage,
+            x0=[0 for i in range(6)],
+            method='COBYLA',
+            args=whole_mesh_args,
+            constraints=mesh_w.constraints
+        )
+        mesh_w.holdability_whole_mesh = maximum_holdability.fun
+        denominator = maximum_holdability.fun
+    else:
+        denominator = mesh_w.holdability_whole_mesh
+    
+    assert( denominator >= holdability.fun)
+    # print(f'\tcurrent value: {holdability.fun} , maximum: {denominator}')
+    return (holdability.fun / denominator)
 
 
 ## 4.3 - Free Motions ##
@@ -294,6 +326,7 @@ def intrinsic_free_motions(mesh_w: Trimesh_wrapper, cone_factor:int=30)->float:
 def external_free_motions(mesh_w:Trimesh_wrapper, user_free_motions:list, cone_factor:int=30) ->None:
     user_constraints = []
     for phi_free in user_free_motions:
+        assert type(phi_free) in [np.array,np.ndarray], f'type of external phi: {type(phi_free)}'
         user_constraints.append({
             'type':'ineq',
             'fun':function_for_constaint,
