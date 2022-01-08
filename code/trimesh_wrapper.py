@@ -52,8 +52,7 @@ class Trimesh_wrapper:
         # optimization_args = (self.maximum_holder.triangles_center, self.maximum_holder.face_normals)
         # max_holder_holdability = optimize.minimize( fun=subregion_blockage, x0=[0 for i in range(6)], method='COBYLA', args=optimization_args, constraints=self.constraints)
         return (ordered_triangles)
-
-        
+   
     def calc_symmetry_planes(self) -> None :
         sp = []
         if self.mesh.symmetry:
@@ -125,6 +124,10 @@ def shell_computation(mesh_w:Trimesh_wrapper,
     shell_vectors = [0 for i in range(n)]
     shell_triangles = []
     for i in range(n):
+
+        if i in [0.25*n, 0.5*n,0.75*n]:
+            print(f'\t\t   Used {i/n:0.2f}% of triangles: current NH={normalized_holdability_value:.4f}')
+
         if ordered_triangles[i][1] >= weight_th:
             print(f'\t\t > Reached infinite weight using {i} triangles: NH={normalized_holdability_value:.4f} [didn`t reach {holdability_th}]')
             break
@@ -140,7 +143,7 @@ def shell_computation(mesh_w:Trimesh_wrapper,
         
         if normalized_holdability_value > epsilon and print_it:
             print_it = False
-            print(f'\t\t > Reached non-zero holdability for shell using {i} triangles')
+            print(f'\t\t > Reached non-zero holdability for shell using {i} out of {n} triangles')
 
         if normalized_holdability_value >= holdability_th:
             print(f'\t\t > Reached holdability threshold using {i} triangles: NH={normalized_holdability_value:.4f}')

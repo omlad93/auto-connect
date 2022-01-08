@@ -32,8 +32,7 @@ def output_obj_path(obj_name:str) -> str:
 def get_parser() -> configargparse.ArgumentParser:
     parser = configargparse.get_argument_parser()
 
-    input = parser.add_mutually_exclusive_group(required=True)
-    input.add_argument('--input','-in', type=str,
+    parser.add_argument('--input','-in', type=str,
                          help='module name to use as input from inputs folder')
     parser.add_argument('--iterations', '-i', type=int, default=1,
                              help='number of iterations to do')
@@ -43,7 +42,8 @@ def get_parser() -> configargparse.ArgumentParser:
                          help='a list of constraints chosen from 0 to 5: [0-2]:Rotational, [3-5]:XYZ')  
     parser.add_argument('--convex-hull', '-cv', action='store_true', required=False,
                          help='a flag to use input`s convex hull')
-
+    parser.add_argument('--message','-m', type=str, default ='',
+                         help='a message to log in autoconnect.txt file in output folder')
     parsed = parser.parse_args()
     assert parsed.results <= parsed.iterations, 'requested more results them iterations'
     assert  parsed.results >= 0 and  parsed.iterations >=0 , 'need a none zero iteration, result count'
@@ -54,12 +54,12 @@ def get_parser() -> configargparse.ArgumentParser:
     second = f'\titerations:{parsed.iterations} \n\tresults:{parsed.results} \n' + '\tclustering will be needed\n' if parsed.clustering else ''
     third = f'\tconvex hull mode\n' if parsed.convex_hull else ''
     fourth =  f'\tconstraints: {parsed.constraints}\n'
+    fifth = f'\t< {parsed.message} >\n' if parsed.message else ''
 
-    parsed.info = first + second + third + fourth
+    parsed.info = first + second + third + fourth + fifth
                              
 
     print(parsed.info)
-
     return parsed
 
 # ------------------------ MAIN ------------------------ #
@@ -74,13 +74,12 @@ def main() -> None:
     )
     results =[]
     vectors =[]
-    # pp.pprint(mesh_w.__dict__)
     cst = ''.join([str(i) for i in range(6) if args.constraints[0][i]])
     out_folder = f'outputs{p.sep}{args.input}_{cst}{p.sep}'
     all_folder = f'{out_folder}all'
     clustered_folder = f'{out_folder}clustered'
-    # cst = ''.join([str(i) for i in range(6) if args.constraints[0][i]])
     os.makedirs(all_folder, exist_ok=True)
+    
     for iteration in range(args.iterations):
         print(f'\t - Computing Shell #{iteration}:')
         seed = calc_starting_point(mesh_w)
@@ -111,5 +110,6 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-    # main('bike-wheel')
-    # main('copper-key')
+
+
+

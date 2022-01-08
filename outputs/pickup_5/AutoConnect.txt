@@ -1,0 +1,4 @@
+
+Auto-Connect run for `pickup`:
+	convex hull mode
+	constraints: [[0. 0. 0. 0. 0. 1.]]

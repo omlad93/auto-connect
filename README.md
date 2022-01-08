@@ -4,7 +4,9 @@ Focused on free-form object holder creation (without a set of connectors)
  * Analyze the input mesh to find intrinsic-free motions (§4.3)
  * Generate a shell that can hold the target object (§4.1 & §4.2)
  * Select a diverse subset of designs to show to the user (§4.5)  
-  
+
+ <span style="color:green"> <b> Our implementation is Naive and meant to be descriptive (follow the steps on the paper) </b> </span>
+
 Based on the following papers:  
 https://koyama.xyz/project/AutoConnect/autoconnect.pdf &nbsp;&nbsp;&nbsp;: original paper  
 https://koyama.xyz/project/AutoConnect/supplemental.pdf &nbsp;: supplemental material 
@@ -33,9 +35,11 @@ run `code/main.py` using terminal followed by arguments:
     [3-5] : XYZ (default: None)
 * <b>`--convex_hull, -cv`</b>  
     a flag to use input`s convex hull (default: False)
+* <b>`--message, -m`</b>  
+    a text to add to AutoConnect.txt output file (default: '')
 
 ## Example command lines:
-* `python .\code\main.py -in sandal -c 3`
+* `python .\code\main.py -in sandal -c 3 -m 'This Will Be Written In Terminal & outputs\sandal_3\AutoConnect.txt'`
 * `python .\code\main.py -c 4 -in ball -i 5 -r 1`
 * `python .\code\main.py -c 4 -in scissors -i 2 -r 1 -cv`
 * `python .\code\main.py -c 4 5 -in cube -i 20 -r 2 -cv`
