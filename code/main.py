@@ -22,6 +22,8 @@ def file_path(filename:str, sub_dir:str, file_type:str='') -> str:
 def input_ply_path(ply_name:str) -> str:
     return file_path(ply_name,'i')
 
+def input_path(name:str, type:str='ply') -> str:
+    return file_path(name,'i',type)
 
 def output_obj_path(obj_name:str) -> str:
     return file_path(obj_name,'o')
@@ -34,6 +36,8 @@ def get_parser() -> configargparse.ArgumentParser:
 
     parser.add_argument('--input','-in', type=str,
                          help='module name to use as input from inputs folder')
+    parser.add_argument('--input-type','-it', type=str, default='ply',
+                         help='module type')
     parser.add_argument('--iterations', '-i', type=int, default=1,
                              help='number of iterations to do')
     parser.add_argument('--results', '-r', type=int, default=1,
@@ -68,10 +72,10 @@ def get_parser() -> configargparse.ArgumentParser:
 def main() -> None:
     args = get_parser()
     mesh_w = Trimesh_wrapper(
-        mesh=trimesh.load(input_ply_path(args.input)),
+        mesh=trimesh.load(input_path(args.input, args.input_type)),
         constraints=args.constraints,
         convex_hull=args.convex_hull
-    )
+        )
     results =[]
     vectors =[]
     cst = ''.join([str(i) for i in range(6) if args.constraints[0][i]])

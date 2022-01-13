@@ -25,6 +25,8 @@ https://koyama.xyz/project/AutoConnect/supplemental.pdf &nbsp;: supplemental mat
 run `code/main.py` using terminal followed by arguments:  
 * <b>`--input, -in`</b> &nbsp; <span style="color:red"> required </span>  
    module name to use as input from inputs folder 
+* <b>`--input-type, -it`</b> &nbsp; default= `ply`  
+   module type <span style="color:green"> {STL, PLY}} </span>   
 * <b>`--iterations, -i`</b>  
    number of iterations to do (default: 1)
 * <b>`--results, -r`</b>  

@@ -1,0 +1,5 @@
+
+Auto-Connect run for `bobafet`:
+	convex hull mode
+	constraints: [[0. 0. 0. 0. 1. 0.]]
+	< bobafet STL file >

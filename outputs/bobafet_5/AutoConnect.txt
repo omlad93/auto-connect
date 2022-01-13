@@ -1,0 +1,8 @@
+
+Auto-Connect run for `bobafet`:
+	iterations:4 
+	results:1 
+	clustering will be needed
+	convex hull mode
+	constraints: [[0. 0. 0. 0. 0. 1.]]
+	< bobafet STL file >
